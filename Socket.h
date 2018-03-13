@@ -25,7 +25,7 @@
 // Known issues:
 // - WinSock has issues when included in another header
 // - Char* for every buffer might not be the best idea
-
+// - Inet Atoi is depricated on Windows
 
 #ifndef SOCKET_SOCK_H
 #define SOCKET_SOCK_H
@@ -216,14 +216,14 @@ namespace sock {
 	 * \param new_socket - Connected socket
 	 * \param does_block - NO_BLOCK or BLOCK
 	*/
-	inline bool Accept(Socket* open_socket, Socket* new_socket, bool does_block) {
+	inline bool Accept(Socket* const open_socket, Socket* new_socket, bool does_block) {
 
 		sockaddr_in client_addr;
 		socklen_t client_length = sizeof(client_addr);
 
+#ifdef __linux__
 		int client_socket = -1;
 
-#ifdef __linux__
 		int flags = 0;
 
 		if (!does_block)
@@ -236,6 +236,8 @@ namespace sock {
 		}
 
 #elif _WIN32
+		SOCKET client_socket;
+
 		client_socket = accept(open_socket->socket, (sockaddr*)&client_addr, &client_length);
 
 		if (client_socket < 0) {
@@ -261,7 +263,7 @@ namespace sock {
 	 * \param buffer - Pointer to buffer to fill
 	 * \param does_block - NO_BLOCK or BLOCK
 	*/
-	inline int Receive(Socket* in_socket, char* buffer, bool does_block) {
+	inline int Receive(Socket* const in_socket, char* buffer, bool does_block) {
 		if (!in_socket) {
 			std::cout << "Trying to receive on nullptr socket\n";
 			return 0;
@@ -292,7 +294,7 @@ namespace sock {
 				return -1;
 		}
 
-		int receive_return = recv(in_socket->socket, buffer, MAX_BUFFER_LENGHT, 0);
+		int receive_return = recv(in_socket->socket, buffer, MAX_BUFFER_LENGTH, 0);
 
 		if (receive_return == 0) {
 			std::cout << "Trying to receive on closed socket\n";
@@ -365,7 +367,7 @@ namespace sock {
 	 * \param buffer - Buffer to send
 	 * \param bytes - Size of buffer in bytes
 	*/
-	inline int Send(Socket* to_socket, char* buffer, uint16_t bytes) {
+	inline int Send(Socket* const to_socket, char* buffer, uint16_t bytes) {
 		if (bytes > MAX_BUFFER_LENGTH)
 			return -1;
 
@@ -401,7 +403,7 @@ namespace sock {
 	 * \brief Close a socket. Not closing sockets after completion can cause future binding errors
 	 * \param in_socket - Socket to close
 	*/
-	inline void Close(Socket* in_socket) {
+	inline void Close(Socket* const in_socket) {
 #ifdef __linux__
 		close(in_socket->socket);
 
